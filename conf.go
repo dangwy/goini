@@ -106,25 +106,25 @@ func (c *Config) ReadList() []map[string]map[string]string {
 	buf := bufio.NewReader(file)
 	for {
 		l, err := buf.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			CheckErr(err)
+		}
 		line := strings.TrimSpace(l)
-		if err != nil {
-			if err != io.EOF {
-				CheckErr(err)
-			}
-			if len(line) == 0 {
-				break
-			}
+		if len(line) == 0 || line[0] == '#'{
+			continue
 		}
 		switch {
 		case len(line) == 0:
 		case line[0] == '[' && line[len(line)-1] == ']':
-			section = strings.TrimSpace(line[1 : len(line)-1])
+			section = line[1 : len(line)-1]
 			data = make(map[string]map[string]string)
 			data[section] = make(map[string]string)
 		default:
 			i := strings.IndexAny(line, "=")
-			value := strings.TrimSpace(line[i+1 : len(line)])
-			data[section][strings.TrimSpace(line[0:i])] = value
+			value := line[i+1 : len(line)]
+			data[section][line[0:i]] = value
 			if c.uniquappend(section) == true {
 				c.conflist = append(c.conflist, data)
 			}
